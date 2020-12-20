@@ -219,8 +219,15 @@ void* fluid_alloc(size_t len)
 
 /**
  * Convenience wrapper for free() that satisfies at least C90 requirements.
- * Especially useful when using fluidsynth with programming languages that do not provide malloc() and free().
- * @note Only use this function when the API documentation explicitly says so. Otherwise use adequate \c delete_fluid_* functions.
+ *
+ * @param ptr Pointer to memory region that should be freed
+ *
+ * Especially useful when using fluidsynth with programming languages that do not
+ * provide malloc() and free().
+ *
+ * @note Only use this function when the API documentation explicitly says so. Otherwise use
+ * adequate \c delete_fluid_* functions.
+ *
  * @since 2.0.7
  */
 void fluid_free(void* ptr)
@@ -976,7 +983,7 @@ new_fluid_thread(const char *name, fluid_thread_func_t func, void *data, int pri
 #if OLD_GLIB_THREAD_API
 
     /* Make sure g_thread_init has been called.
-     * FIXME - Probably not a good idea in a shared library,
+     * Probably not a good idea in a shared library,
      * but what can we do *and* remain backwards compatible? */
     if(!g_thread_supported())
     {
@@ -1692,3 +1699,28 @@ fluid_long_long_t fluid_file_tell(FILE* f)
     return ftell(f);
 #endif
 }
+
+#ifdef WIN32
+// not thread-safe!
+char* fluid_get_windows_error(void)
+{
+    static TCHAR err[1024];
+
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
+                  NULL,
+                  GetLastError(),
+                  MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+                  err,
+                  sizeof(err)/sizeof(err[0]),
+                  NULL);
+
+#ifdef _UNICODE
+    static char ascii_err[sizeof(err)];
+
+    WideCharToMultiByte(CP_UTF8, 0, err, -1, ascii_err, sizeof(ascii_err)/sizeof(ascii_err[0]), 0, 0);
+    return ascii_err;
+#else
+    return err;
+#endif
+}
+#endif
